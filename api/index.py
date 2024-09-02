@@ -3,11 +3,12 @@ import sys
 import random
 import colorama
 from colorama import Fore, Style
+from http.server import BaseHTTPRequestHandler, HTTPServer
+from urllib.parse import urlparse, parse_qs
 
 colorama.init(autoreset=True)
 
 def supports_color():
-    # Check if the terminal supports colors
     if sys.platform == 'win32':
         return os.system("") == 0
     return hasattr(sys.stdout, 'isatty') and sys.stdout.isatty()
@@ -36,26 +37,25 @@ colors = {
     }
 }
 
-# Constants for the game
-SIZE = 12  # Size of the grid (12x12)
-MINES_COUNT = 25  # Number of mines on the board
+SIZE = 12
+MINES_COUNT = 25
 
 class Cell:
     def __init__(self, x, y, is_mine=False):
-        self.x = x  # Row position
-        self.y = y  # Column position
-        self.is_mine = is_mine  # Whether the cell is a mine
-        self.is_revealed = False  # Whether the cell has been revealed
-        self.is_flagged = False  # Whether the cell has been flagged
-        self.adjacent_mines = 0  # Number of adjacent mines
+        self.x = x
+        self.y = y
+        self.is_mine = is_mine
+        self.is_revealed = False
+        self.is_flagged = False
+        self.adjacent_mines = 0
 
 class Minesweeper:
     def __init__(self):
         self.board = [[Cell(x, y) for y in range(SIZE)] for x in range(SIZE)]
         self.game_over = False
         self.victory = False
-        self.first_move = True  # To ensure first move is never a mine
-        self.remaining_cells = SIZE * SIZE - MINES_COUNT  # Cells to reveal to win
+        self.first_move = True
+        self.remaining_cells = SIZE * SIZE - MINES_COUNT
 
     def generate_mines(self, initial_x, initial_y):
         mines_placed = 0
@@ -63,7 +63,6 @@ class Minesweeper:
             x = random.randint(0, SIZE - 1)
             y = random.randint(0, SIZE - 1)
             cell = self.board[x][y]
-            # Ensure the first move is not a mine and no duplicate mines
             if not cell.is_mine and (x != initial_x or y != initial_y):
                 cell.is_mine = True
                 mines_placed += 1
@@ -113,8 +112,8 @@ class Minesweeper:
         cell.is_flagged = not cell.is_flagged
 
     def print_board(self):
-        print("    " + " ".join(f"{i:2}" for i in range(SIZE)))
-        print("   " + "---" * SIZE)
+        board_str = "    " + " ".join(f"{i:2}" for i in range(SIZE)) + "\n"
+        board_str += "   " + "---" * SIZE + "\n"
         for i in range(SIZE):
             row = []
             for j in range(SIZE):
@@ -125,66 +124,53 @@ class Minesweeper:
                     elif cell.adjacent_mines > 0:
                         cell_repr = colors['number'][cell.adjacent_mines] + f"{cell.adjacent_mines} " + colors['reset']
                     else:
-                        cell_repr = "  "  # Empty cell
+                        cell_repr = "  "
                 elif cell.is_flagged:
                     cell_repr = colors['flag'] + "F " + colors['reset']
                 else:
                     cell_repr = "# "
                 row.append(cell_repr)
-            print(f"{i:2} | " + " ".join(row))
-        print()
+            board_str += f"{i:2} | " + " ".join(row) + "\n"
+        return board_str
 
-    def start_game(self):
-        print("Welcome to Minesweeper!")
-        print(f"Uncover all cells without mines to win. Board size: {SIZE}x{SIZE}, Mines: {MINES_COUNT}")
-        while not self.game_over:
-            self.print_board()
-            try:
-                action, x, y = self.get_player_input()
-                if self.first_move:
-                    self.generate_mines(x, y)
-                    self.first_move = False
-                if action == 'r':
-                    self.reveal_cell(x, y)
-                elif action == 'f':
-                    self.flag_cell(x, y)
-                else:
-                    print("Invalid action. Use 'r' to reveal and 'f' to flag.")
-            except Exception as e:
-                print(f"Error: {e}")
-                print("Invalid input. Please enter action and coordinates correctly.")
+    def handle_action(self, action, x, y):
+        if self.first_move:
+            self.generate_mines(x, y)
+            self.first_move = False
+        if action == 'r':
+            self.reveal_cell(x, y)
+        elif action == 'f':
+            self.flag_cell(x, y)
 
-        self.print_board()
-        if self.victory:
-            print("Congratulations! You cleared all the mines!")
-            print("Here is your reward link: http://lockwoodsideology.com")
-        else:
-            print("Boom! You hit a mine. Game over.")
-            self.restart_prompt()
+        if self.game_over:
+            if self.victory:
+                return "Congratulations! You cleared all the mines!\nHere is your reward link: http://lockwoodsideology.com\n"
+            else:
+                return "Boom! You hit a mine. Game over.\n"
 
-    def get_player_input(self):
-        user_input = input("Enter your move (e.g., 'r 3 4' to reveal cell at row 3, column 4): ")
-        parts = user_input.strip().split()
-        if len(parts) != 3:
-            raise ValueError("Input must be in the format: action x y")
-        action = parts[0].lower()
-        x = int(parts[1])
-        y = int(parts[2])
-        if action not in ('r', 'f'):
-            raise ValueError("Action must be 'r' (reveal) or 'f' (flag).")
-        if not (0 <= x < SIZE and 0 <= y < SIZE):
-            raise ValueError(f"Coordinates must be between 0 and {SIZE - 1}.")
-        return action, x, y
+        return self.print_board()
 
-    def restart_prompt(self):
-        choice = input("Would you like to play again? (y/n): ").strip().lower()
-        if choice == 'y':
-            self.__init__()
-            self.start_game()
-        else:
-            print("Thank you for playing!")
-            sys.exit()
+class handler(BaseHTTPRequestHandler):
+    game = Minesweeper()
+
+    def do_GET(self):
+        query_components = parse_qs(urlparse(self.path).query)
+        action = query_components.get('action', [''])[0]
+        x = int(query_components.get('x', [0])[0])
+        y = int(query_components.get('y', [0])[0])
+
+        response = self.game.handle_action(action, x, y)
+
+        self.send_response(200)
+        self.send_header('Content-type', 'text/plain')
+        self.end_headers()
+        self.wfile.write(response.encode('utf-8'))
+
+def run(server_class=HTTPServer, handler_class=handler, port=8080):
+    server_address = ('', port)
+    httpd = server_class(server_address, handler_class)
+    print(f'Starting http server on port {port}...')
+    httpd.serve_forever()
 
 if __name__ == "__main__":
-    game = Minesweeper()
-    game.start_game()
+    run()
