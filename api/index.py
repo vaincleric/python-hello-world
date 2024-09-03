@@ -1,7 +1,7 @@
+from http.server import BaseHTTPRequestHandler
 import os
 import sys
 import random
-from http.server import BaseHTTPRequestHandler, HTTPServer
 import colorama
 from colorama import Fore, Style
 
@@ -90,7 +90,6 @@ class Minesweeper:
         if cell.is_revealed or cell.is_flagged:
             return
         cell.is_revealed = True
-
         if cell.is_mine:
             self.game_over = True
             self.victory = False
@@ -134,27 +133,27 @@ class Minesweeper:
         return "\n".join(output)
 
     def start_game(self):
-        return "Game started! Uncover all cells without mines to win."
+        if self.victory:
+            return "Congratulations! You cleared all the mines!\nHere is your reward link: http://lockwoodsideology.com"
+        elif self.game_over:
+            return "Boom! You hit a mine. Game over.\n"
 
-class MinesweeperHandler(BaseHTTPRequestHandler):
+class handler(BaseHTTPRequestHandler):
     game = Minesweeper()
 
     def do_GET(self):
+        if self.game.first_move:
+            self.game.generate_mines(0, 0)  # Placeholder for actual player move
+            self.game.first_move = False
         self.send_response(200)
         self.send_header('Content-type', 'text/plain')
         self.end_headers()
-
-        if self.game.first_move:
-            self.game.generate_mines(0, 0)  # Example first move to start the game
-
-        response = self.game.print_board()
+        response = self.game.print_board() + self.game.start_game()
         self.wfile.write(response.encode('utf-8'))
 
-def run(server_class=HTTPServer, handler_class=MinesweeperHandler, port=8080):
-    server_address = ('', port)
-    httpd = server_class(server_address, handler_class)
-    print(f'Starting http server on port {port}...')
-    httpd.serve_forever()
-
 if __name__ == "__main__":
-    run()
+    from http.server import HTTPServer
+    server_address = ('', 8000)
+    httpd = HTTPServer(server_address, handler)
+    print("Starting server at http://localhost:8000")
+    httpd.serve_forever()
