@@ -1,16 +1,5 @@
 from http.server import BaseHTTPRequestHandler
 
-class handler(BaseHTTPRequestHandler):
-
-    def do_GET(self):
-        self.send_response(200)
-        self.send_header('Content-type', 'text/plain')
-        self.end_headers()
-        self.wfile.write('Minesweeper Basic Setup'.encode('utf-8'))
-        return
-
-from http.server import BaseHTTPRequestHandler
-
 class Cell:
     def __init__(self, x, y):
         self.x = x
@@ -19,6 +8,15 @@ class Cell:
         self.is_revealed = False
         self.is_flagged = False
         self.adjacent_mines = 0
+
+class Minesweeper:
+    def __init__(self):
+        self.board = [[Cell(x, y) for y in range(12)] for x in range(12)]
+        self.game_over = False
+
+    def render_board(self):
+        return "\n".join([" ".join(["#" for _ in range(12)]) for _ in range(12)])
+
 
 class handler(BaseHTTPRequestHandler):
 
