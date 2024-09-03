@@ -9,14 +9,6 @@ class Cell:
         self.is_flagged = False
         self.adjacent_mines = 0
 
-class Minesweeper:
-    def __init__(self):
-        self.board = [[Cell(x, y) for y in range(12)] for x in range(12)]
-        self.game_over = False
-
-    def render_board(self):
-        return "\n".join([" ".join(["#" for _ in range(12)]) for _ in range(12)])
-
 
 class handler(BaseHTTPRequestHandler):
 
