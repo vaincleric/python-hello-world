@@ -29,6 +29,20 @@ class Minesweeper:
         # Return a simple string representation for testing
         return "\n".join([" ".join(["#" for _ in range(12)]) for _ in range(12)])
 
+    def start_game(self):
+    # Initialize the game and generate a test board
+    self.generate_mines(0, 0)  # Example call to generate mines
+    return "Game Initialized!"
+
+def generate_mines(self, initial_x, initial_y):
+    # Simple method for testing
+    pass
+
+   def render_board(self):
+    # Render the board for testing
+    return "\n".join([" ".join(["#" for _ in range(12)]) for _ in range(12)])
+
+
 class Cell:
     def __init__(self, x, y):
         self.x = x
