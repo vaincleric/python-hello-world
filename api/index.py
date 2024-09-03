@@ -17,38 +17,36 @@ class handler(BaseHTTPRequestHandler):
         return
 
 class Minesweeper:
-    def __init__(self):
+        def __init__(self):
+        # Initialize a 12x12 board with cells
         self.board = [[Cell(x, y) for y in range(12)] for x in range(12)]
-        # Initialize other game settings
+        self.game_over = False
+        self.victory = False
+        self.first_move = True
+        self.remaining_cells = 12 * 12 - 25  # Total cells minus the number of mines
 
     def start_game(self):
-        # Simple example logic for testing
+        # Start the game by generating mines after the first move
+        self.generate_mines(0, 0)  # For now, just use 0,0 as a placeholder
         return "Game Initialized!"
 
+    def generate_mines(self, initial_x, initial_y):
+        # This is a placeholder function. We'll fill it out later.
+        pass
+
     def render_board(self):
-        # Return a simple string representation for testing
+        # Simple method to visualize the board for testing purposes
         return "\n".join([" ".join(["#" for _ in range(12)]) for _ in range(12)])
 
-    def start_game(self):
-    # Initialize the game and generate a test board
-    self.generate_mines(0, 0)  # Example call to generate mines
-    return "Game Initialized!"
-
-def generate_mines(self, initial_x, initial_y):
-    # Simple method for testing
-    pass
-
-   def render_board(self):
-    # Render the board for testing
-    return "\n".join([" ".join(["#" for _ in range(12)]) for _ in range(12)])
-
-
 class Cell:
-    def __init__(self, x, y):
+       def __init__(self, x, y):
         self.x = x
         self.y = y
-        # Other attributes...
-
+        self.is_mine = False
+        self.is_revealed = False
+        self.is_flagged = False
+        self.adjacent_mines = 0
+           
 if __name__ == "__main__":
     from http.server import HTTPServer
     server_address = ('', 8000)
