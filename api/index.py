@@ -144,6 +144,9 @@ class MinesweeperHandler(BaseHTTPRequestHandler):
         self.send_header('Content-type', 'text/plain')
         self.end_headers()
 
+        if self.game.first_move:
+            self.game.generate_mines(0, 0)  # Example first move to start the game
+
         response = self.game.print_board()
         self.wfile.write(response.encode('utf-8'))
 
